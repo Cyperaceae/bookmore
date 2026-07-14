@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Book More - Options</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      max-width: 700px;
+      margin: 0 auto;
+      padding: 2rem;
+      background: #f5f5f5;
+      color: #333;
+      line-height: 1.6;
+    }
+    h1 { color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 0.5rem; margin-bottom: 1.5rem; }
+    .card { background: white; border-radius: 8px; padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    .card h2 { margin-top: 0; color: #34495e; font-size: 1.2rem; }
+    .info-row { display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; border-bottom: 1px solid #eee; }
+    .info-row:last-child { border-bottom: none; }
+    .info-label { font-weight: 500; color: #666; min-width: 120px; }
+    .info-value { color: #333; font-family: monospace; font-size: 0.9rem; word-break: break-all; text-align: right; flex: 1; margin-left: 1rem; }
+    .info-value.active { color: #27ae60; font-weight: 500; }
+    .info-value.inactive { color: #95a5a6; }
+    .url-list { list-style: none; padding: 0; margin: 0; max-height: 200px; overflow-y: auto; }
+    .url-item { display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; margin-bottom: 0.25rem; background: #f8f9fa; border-radius: 4px; font-family: monospace; font-size: 0.85rem; }
+    .url-item.best { background: #d4edda; border: 1px solid #c3e6cb; }
+    .url-text { word-break: break-all; flex: 1; }
+    .best-badge { background: #27ae60; color: white; padding: 0.2rem 0.5rem; border-radius: 12px; font-size: 0.75rem; font-weight: 500; margin-left: 0.5rem; white-space: nowrap; }
+    .form-group { margin-bottom: 1rem; }
+    label { display: block; margin-bottom: 0.5rem; font-weight: 500; color: #555; }
+    input[type="url"] { width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem; font-family: monospace; }
+    input[type="url"]:focus { outline: none; border-color: #3498db; box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1); }
+    .button-group { display: flex; gap: 0.75rem; margin-top: 1rem; }
+    button { padding: 0.75rem 1.5rem; border: none; border-radius: 4px; font-size: 1rem; cursor: pointer; transition: background 0.2s, transform 0.1s; }
+    button:active { transform: translateY(1px); }
+    button:disabled { opacity: 0.6; cursor: not-allowed; }
+    .btn-primary { background: #3498db; color: white; }
+    .btn-secondary { background: #95a5a6; color: white; }
+    .btn-success { background: #27ae60; color: white; }
+    .status-message { margin-top: 1rem; padding: 0.75rem; border-radius: 4px; display: none; }
+    .status-message.success { display: block; background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+    .status-message.error { display: block; background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+    .priority-note { background: #e8f4fd; border-left: 4px solid #3498db; padding: 1rem; margin-bottom: 1.5rem; border-radius: 0 4px 4px 0; }
+    .priority-list .current { color: #27ae60; font-weight: bold; }
+    .url-section { flex-direction: column; align-items: flex-start; }
+    .url-section .info-value { text-align: left; margin-left: 0; width: 100%; }
+  </style>
+</head>
+<body>
+  <h1>Book More - Settings</h1>
+
+  <div class="priority-note">
+    <h3>URL Priority Order</h3>
+    <ol class="priority-list">
+      <li data-element="priorityCustom" id="priority-custom">Custom URL (if set and healthy)</li>
+      <li data-element="priorityRemote" id="priority-remote">Best Remote Mirror (health-checked)</li>
+    </ol>
+  </div>
+
+  <div class="card">
+    <h2>Current Configuration</h2>
+    <div class="info-row">
+      <span class="info-label">Active URL</span>
+      <span data-element="activeUrl" class="info-value active" id="active-url">Loading...</span>
+    </div>
+    <div class="info-row">
+      <span class="info-label">Custom URL</span>
+      <span data-element="customUrl" class="info-value inactive" id="custom-url">Not set</span>
+    </div>
+    <div class="info-row url-section">
+      <span class="info-label">Remote Mirrors</span>
+      <span data-element="remoteUrls" class="info-value inactive" id="remote-urls">
+        <ul data-element="remoteUrlList" class="url-list" id="remote-url-list">
+          <li class="url-item"><span class="url-text">Not synced</span></li>
+        </ul>
+      </span>
+    </div>
+    <div class="info-row">
+      <span class="info-label">Last Sync</span>
+      <span data-element="lastSync" class="info-value" id="last-sync">Never</span>
+    </div>
+    <div class="info-row">
+      <span class="info-label">Last Health Check</span>
+      <span data-element="lastHealthCheck" class="info-value" id="last-health-check">Never</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Custom URL Settings</h2>
+    <div class="form-group">
+      <label for="custom-url-input">Custom Anna's Archive URL</label>
+      <input data-element="customUrlInput" type="url" id="custom-url-input" placeholder="https://..." pattern="https://.*">
+    </div>
+    <div class="button-group">
+      <button data-element="saveBtn" class="btn-primary" id="save-btn">Save Custom URL</button>
+      <button data-element="resetBtn" class="btn-secondary" id="reset-btn">Reset to Default</button>
+    </div>
+    <div class="button-group">
+      <button data-element="syncBtn" class="btn-success" id="sync-btn">Sync Now from Remote</button>
+    </div>
+    <div data-element="statusMessage" id="status-message" class="status-message"></div>
+  </div>
+
+  <script src="options.js"></script>
+</body>
+</html>

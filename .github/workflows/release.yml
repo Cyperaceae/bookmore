@@ -1,0 +1,68 @@
+name: Release
+
+# Usage: git tag v1.14.0 && git push origin v1.14.0
+#
+# On tag push this will:
+#   1. Parse the version from the tag name
+#   2. Sync it into chrome/manifest.json, firefox/manifest.json, tampermonkey/bookmore.user.js
+#   3. Commit that change back to main (keeps the repo in sync with what's released)
+#   4. Zip chrome/ and firefox/
+#   5. Create a GitHub Release with the zips and the updated bookmore.user.js attached
+#
+# The Chrome Web Store / Firefox Add-ons / Greasy Fork uploads are still manual,
+# but you can grab the already-version-synced files straight from the Release page.
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Extract version from tag
+        id: version
+        run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Sync version into all files
+        run: node scripts/sync-version.js ${{ steps.version.outputs.version }}
+
+      - name: Commit synced version
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          git add chrome/manifest.json firefox/manifest.json tampermonkey/bookmore.user.js
+          
+          if ! git diff --staged --quiet; then
+            git commit -m "chore: sync version to ${{ steps.version.outputs.version }}"
+            git fetch origin main
+            git rebase origin/main
+            git push origin HEAD:main
+          else
+            echo "No changes to commit"
+          fi
+
+      - name: Package chrome extension
+        run: cd chrome && zip -r ../bookmore-chrome-${{ steps.version.outputs.version }}.zip .
+
+      - name: Package firefox extension
+        run: cd firefox && zip -r ../bookmore-firefox-${{ steps.version.outputs.version }}.zip .
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: v${{ steps.version.outputs.version }}
+          generate_release_notes: true
+          files: |
+            bookmore-chrome-${{ steps.version.outputs.version }}.zip
+            bookmore-firefox-${{ steps.version.outputs.version }}.zip
+            tampermonkey/bookmore.user.js

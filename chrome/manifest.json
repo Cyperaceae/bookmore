@@ -1,0 +1,43 @@
+{
+"update_url": "https://clients2.google.com/service/update2/crx",
+
+  "manifest_version": 3,
+  "name": "Book More",
+  "version": "2.1.0",
+  "description": "Quick-access buttons for Mirror Library (ISBN/title search) and Libby (copies title) on Goodreads, StoryGraph, Douban and NeoDB.",
+  "author": "cccccc",
+  "icons": {
+    "128": "icon-128.png"
+  },
+  "permissions": [
+    "storage",
+    "alarms",
+    "clipboardWrite"
+  ],
+  "host_permissions": [
+    "https://neodb.social/book/*",
+    "https://book.douban.com/subject/*",
+    "https://www.goodreads.com/book/*",
+    "https://app.thestorygraph.com/books/*",
+    "https://tiny-leaf-4d57.cccccccccccc.workers.dev/*"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "options_page": "options.html",
+  "content_scripts": [
+    {
+      "matches": [
+        "https://neodb.social/book/*",
+        "https://book.douban.com/subject/*",
+        "https://www.goodreads.com/book/*",
+        "https://app.thestorygraph.com/books/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "run_at": "document_end"
+    }
+  ]
+}

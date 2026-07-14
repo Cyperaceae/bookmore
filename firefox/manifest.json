@@ -1,0 +1,56 @@
+{
+  "manifest_version": 3,
+  "name": "Book More",
+  "version": "2.1.0",
+  "description": "Quick-access buttons for Anna's Archive and Libby.",
+  "author": "cccccc",
+  "icons": {
+    "128": "icon-128.png"
+  },
+  "permissions": [
+    "storage",
+    "clipboardWrite",
+    "alarms"
+  ],
+  "host_permissions": [
+    "https://neodb.social/book/*",
+    "https://book.douban.com/subject/*",
+    "https://www.goodreads.com/book/*",
+    "https://app.thestorygraph.com/books/*",
+    "https://tiny-leaf-4d57.cccccccccccc.workers.dev/*"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "scripts": [
+      "background.js"
+    ]
+  },
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": true
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://neodb.social/book/*",
+        "https://book.douban.com/subject/*",
+        "https://www.goodreads.com/book/*",
+        "https://app.thestorygraph.com/books/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "run_at": "document_end"
+    }
+  ],
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "book-more@yourdomain.com",
+      "data_collection_permissions": {
+        "required": [
+          "none"
+        ]
+      }
+    }
+  }
+}
