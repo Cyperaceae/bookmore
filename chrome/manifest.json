@@ -1,9 +1,8 @@
 {
-"update_url": "https://clients2.google.com/service/update2/crx",
-
+  "update_url": "https://clients2.google.com/service/update2/crx",
   "manifest_version": 3,
   "name": "Book More",
-  "version": "2.1.0",
+  "version": "2.3.0",
   "description": "Quick-access buttons for Mirror Library (ISBN/title search) and Libby (copies title) on Goodreads, StoryGraph, Douban and NeoDB.",
   "author": "cccccc",
   "icons": {
@@ -18,6 +17,7 @@
     "https://neodb.social/book/*",
     "https://book.douban.com/subject/*",
     "https://www.goodreads.com/book/*",
+    "https://www.goodreads.com/*/book/*",
     "https://app.thestorygraph.com/books/*",
     "https://tiny-leaf-4d57.cccccccccccc.workers.dev/*"
   ],
@@ -32,6 +32,7 @@
         "https://neodb.social/book/*",
         "https://book.douban.com/subject/*",
         "https://www.goodreads.com/book/*",
+        "https://www.goodreads.com/*/book/*",
         "https://app.thestorygraph.com/books/*"
       ],
       "js": [

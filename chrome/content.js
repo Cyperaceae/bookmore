@@ -1,11 +1,26 @@
 (function () {
   'use strict';
 
-  const STORAGE_KEYS = {
-    CUSTOM_URL: 'customUrl',
-    REMOTE_URLS: 'remoteUrls',
-    ACTIVE_URL: 'activeUrl'
-  };
+  function cleanTitle(title) {
+    if (!title) return '';
+    let cleaned = title;
+    if (cleaned.includes('%')) {
+      try {
+        cleaned = decodeURIComponent(cleaned);
+      } catch (_) {}
+    }
+    return cleaned.replace(/\s+/g, ' ').trim();
+  }
+
+  function decodeHtml(html) {
+    if (!html) return '';
+    try {
+      const doc = new DOMParser().parseFromString(html, 'text/html');
+      return doc.body.textContent || '';
+    } catch (_) {
+      return html;
+    }
+  }
 
   async function getEffectiveUrl() {
     try {
@@ -44,13 +59,7 @@
       data = data.find(x => x['@type'] === 'Book') || data[0] || {};
     }
 
-    function decodeHtml(html) {
-      const txt = document.createElement("textarea");
-      txt.innerHTML = html;
-      return txt.value;
-    }
-
-    const title = decodeHtml(data.name || data.title || '');
+    const title = cleanTitle(decodeHtml(data.name || data.title || ''));
     const isbn = (data.isbn || '').replace(/-/g, '');
     return { title, isbn };
   }
@@ -119,7 +128,7 @@
     },
 
     goodreads: {
-      match: /^https:\/\/www\.goodreads\.com\/book\//,
+      match: /^https:\/\/www\.goodreads\.com\/(?:[^/]+\/)?book\//,
       insertTarget() {
         const h = document.querySelector('#bookTitle') ||
                   document.querySelector('h1');
@@ -147,7 +156,7 @@
       extractData() {
         const titleEl = document.querySelector('.book-title-author-and-series h3') || 
                         document.querySelector('h3.font-semibold');
-        const title = titleEl ? titleEl.textContent.trim() : '';
+        const title = titleEl ? cleanTitle(titleEl.textContent) : '';
 
         let isbn = '';
         const editionInfo = document.querySelector('.edition-info');

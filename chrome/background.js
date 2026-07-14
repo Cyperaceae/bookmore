@@ -177,6 +177,11 @@ chrome.runtime.onInstalled.addListener(async (details) => {
     await getEffectiveUrl();
   }
 
+  // Open options page on first installation
+  if (details.reason === 'install') {
+    chrome.runtime.openOptionsPage();
+  }
+
   console.log('[Background] Initialization complete');
 });
 
@@ -256,13 +261,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   })();
 
   return true;
-});
-
-chrome.runtime.onInstalled.addListener((details) => {
-  if (details.reason === chrome.runtime.OnInstalledReason.INSTALL) {
-    // Open options on first install
-    chrome.runtime.openOptionsPage();
-   } 
 });
 
 export { WORKER_URL, syncUrlsFromWorker, getBestMirror };

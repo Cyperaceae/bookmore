@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Book More",
-  "version": "2.1.0",
+  "version": "2.3.0",
   "description": "Quick-access buttons for Anna's Archive and Libby.",
   "author": "cccccc",
   "icons": {
@@ -16,6 +16,7 @@
     "https://neodb.social/book/*",
     "https://book.douban.com/subject/*",
     "https://www.goodreads.com/book/*",
+    "https://www.goodreads.com/*/book/*",
     "https://app.thestorygraph.com/books/*",
     "https://tiny-leaf-4d57.cccccccccccc.workers.dev/*"
   ],
@@ -35,6 +36,7 @@
         "https://neodb.social/book/*",
         "https://book.douban.com/subject/*",
         "https://www.goodreads.com/book/*",
+        "https://www.goodreads.com/*/book/*",
         "https://app.thestorygraph.com/books/*"
       ],
       "js": [

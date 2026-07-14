@@ -134,6 +134,12 @@ async function loadConfiguration() {
     if (elements.customUrlInput && response.customUrl) {
       elements.customUrlInput.value = response.customUrl;
     }
+
+    // Auto-sync if not synced yet (on first options page load)
+    if (!response.remoteUrls || response.remoteUrls.length === 0) {
+      console.log('[Options] No remote URLs found. Performing automatic first-time sync...');
+      await syncNow();
+    }
   } catch (error) {
     showStatus(error.message, true);
   }

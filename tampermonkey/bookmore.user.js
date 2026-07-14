@@ -1,12 +1,13 @@
 // ==UserScript==
 // @name         Book More
 // @namespace    https://example.com/
-// @version      2.2.0
+// @version      2.3.0
 // @description  Adds quick-access buttons for Anna's Archive and Libby on Douban, NeoDb, Goodreads, and StoryGraph. Settings panel included.
 // @author       cccccc
 // @match        https://neodb.social/book/*
 // @match        https://book.douban.com/subject/*
 // @match        https://www.goodreads.com/book/*
+// @match        https://www.goodreads.com/*/book/*
 // @match        https://app.thestorygraph.com/books/*
 // @grant        GM_xmlhttpRequest
 // @grant        GM_getValue
@@ -29,20 +30,43 @@
     INSTALLED_VERSION: 'installedVersion',
   };
  
-  const CURRENT_VERSION = '2.1.0';
+  const CURRENT_VERSION = GM_info?.script?.version || '2.3.0';
   const SYNC_INTERVAL_MS = 3 * 24 * 60 * 60 * 1000; // 3 days
  
   // ---------------------------------------------------------------------------
   // Utilities
   // ---------------------------------------------------------------------------
  
+  /** Clean up a book title (remove multiple whitespaces, URL encodings, etc.) */
+  function cleanTitle(title) {
+    if (!title) return '';
+    let cleaned = title;
+    if (cleaned.includes('%')) {
+      try {
+        cleaned = decodeURIComponent(cleaned);
+      } catch (_) {}
+    }
+    return cleaned.replace(/\s+/g, ' ').trim();
+  }
+
+  /** Decode HTML entities safely without using innerHTML */
+  function decodeHtml(html) {
+    if (!html) return '';
+    try {
+      const doc = new DOMParser().parseFromString(html, 'text/html');
+      return doc.body.textContent || '';
+    } catch (_) {
+      return html;
+    }
+  }
+
   /** Escape a string for safe insertion into HTML attribute or text content. */
   function escapeHtml(str) {
     return String(str)
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;');
+      .replace(/&/g, '&')
+      .replace(/</g, '<')
+      .replace(/>/g, '>')
+      .replace(/"/g, '"');
   }
  
   /** Read and parse the stored remote URL array; returns [] on any failure. */
@@ -175,9 +199,7 @@
     }
  
     // Decode HTML entities that may appear in JSON-LD title strings.
-    const textarea = document.createElement('textarea');
-    textarea.innerHTML = data.name ?? data.title ?? '';
-    const title = textarea.value;
+    const title = cleanTitle(decodeHtml(data.name ?? data.title ?? ''));
  
     const isbn = (data.isbn ?? '').replace(/-/g, '');
     return { title, isbn };
@@ -484,7 +506,7 @@
     },
  
     goodreads: {
-      match: /^https:\/\/www\.goodreads\.com\/book\//,
+      match: /^https:\/\/www\.goodreads\.com\/(?:[^/]+\/)?book\//,
       insertTarget() {
         const h = document.querySelector('#bookTitle') ||
           document.querySelector('h1');
@@ -508,7 +530,7 @@
       extractData() {
         const titleEl = document.querySelector('.book-title-author-and-series h3') ||
           document.querySelector('h3.font-semibold');
-        const title = titleEl ? titleEl.textContent.trim() : '';
+        const title = titleEl ? cleanTitle(titleEl.textContent) : '';
  
         let isbn = '';
         const editionInfo = document.querySelector('.edition-info');

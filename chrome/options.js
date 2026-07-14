@@ -48,27 +48,50 @@ function updatePriorityHighlight(source) {
 }
 
 /**
- * Render remote URLs list
+ * Render remote URLs list safely without innerHTML
  */
 function renderRemoteUrls(urls, activeUrl) {
   if (!elements.remoteUrlList || !elements.remoteUrls) return;
 
+  // Clear the list first
+  elements.remoteUrlList.replaceChildren();
+
   if (!urls || urls.length === 0) {
-    elements.remoteUrlList.innerHTML = '<li class="url-item"><span class="url-text">Not synced</span></li>';
+    const li = document.createElement('li');
+    li.className = 'url-item';
+    
+    const span = document.createElement('span');
+    span.className = 'url-text';
+    span.textContent = 'Not synced';
+    
+    li.appendChild(span);
+    elements.remoteUrlList.appendChild(li);
     elements.remoteUrls.className = 'info-value inactive';
     return;
   }
 
-  elements.remoteUrlList.innerHTML = urls.map(url => {
+  // Populate the list safely
+  urls.forEach(url => {
     const isActive = url === activeUrl;
-    return `
-      <li class="url-item ${isActive ? 'best' : ''}">
-        <span class="url-text">${url}</span>
-        ${isActive ? '<span class="best-badge">★ Best</span>' : ''}
-      </li>
-    `;
-  }).join('');
-  
+    
+    const li = document.createElement('li');
+    li.className = `url-item ${isActive ? 'best' : ''}`;
+
+    const textSpan = document.createElement('span');
+    textSpan.className = 'url-text';
+    textSpan.textContent = url; // Safely handles the URL string
+    li.appendChild(textSpan);
+
+    if (isActive) {
+      const badge = document.createElement('span');
+      badge.className = 'best-badge';
+      badge.textContent = '★ Best';
+      li.appendChild(badge);
+    }
+
+    elements.remoteUrlList.appendChild(li);
+  });
+
   elements.remoteUrls.className = 'info-value active';
 }
 
@@ -109,6 +132,12 @@ async function loadConfiguration() {
 
     if (elements.customUrlInput && response.customUrl) {
       elements.customUrlInput.value = response.customUrl;
+    }
+
+    // Auto-sync if not synced yet (on first options page load)
+    if (!response.remoteUrls || response.remoteUrls.length === 0) {
+      console.log('[Options] No remote URLs found. Performing automatic first-time sync...');
+      await syncNow();
     }
   } catch (error) {
     showStatus(error.message, true);

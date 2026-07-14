@@ -1,11 +1,11 @@
 /**
  * Version sync script
- * Usage: node scripts/sync-version.js <version> (e.g., 1.15.0)
+ * Usage: node scripts/sync-version.js <version> (e.g., 2.3.0)
  *
  * Writes the given version into:
  *   - chrome/manifest.json
  *   - firefox/manifest.json
- *   - tampermonkey/*good2dou.user.js  (@version header; auto-detects the good2dou.user.js file, no need to hardcode the filename)
+ *   - tampermonkey/*.user.js  (@version header; auto-detects any .user.js file)
  *
  * Never hand-edit the version in those three places again — pass the new
  * version here and run this script instead.
@@ -23,7 +23,7 @@ if (!version) {
 
 // Require plain x.y.z numeric format — compatible with Chrome, Firefox, and Tampermonkey.
 if (!/^\d+\.\d+\.\d+$/.test(version)) {
-  console.error(`Invalid version format: "${version}". Expected x.y.z, e.g. 1.14.0`);
+  console.error(`Invalid version format: "${version}". Expected x.y.z, e.g. 2.3.0`);
   process.exit(1);
 }
 
@@ -44,20 +44,21 @@ function syncManifest(dir) {
   console.log(`OK  ${dir}/manifest.json: ${oldVersion} -> ${version}`);
 }
 
-/** Update the @version header in the good2dou.user.js file under tampermonkey/ */
+/** Update the @version header in the .user.js file under tampermonkey/ */
 function syncUserscript() {
   const dir = path.join(ROOT, 'tampermonkey');
   if (!fs.existsSync(dir)) {
     console.warn('Skipped: tampermonkey directory not found');
     return;
   }
-  const userscriptFile = fs.readdirSync(dir).find((f) => f.endsWith('good2dou.user.js'));
+  const userscriptFile = fs.readdirSync(dir).find((f) => f.endsWith('.user.js'));
   if (!userscriptFile) {
-    console.warn('Skipped: no good2dou.user.js file found under tampermonkey/');
+    console.warn('Skipped: no .user.js file found under tampermonkey/');
     return;
   }
   const filePath = path.join(dir, userscriptFile);
   const content = fs.readFileSync(filePath, 'utf8');
+  
   const match = content.match(/\/\/ @version\s+(.+)/);
   const oldVersion = match ? match[1].trim() : '(not found)';
 
@@ -65,6 +66,7 @@ function syncUserscript() {
     console.error(`No "// @version" line found in ${userscriptFile} — check the header format`);
     process.exit(1);
   }
+  
   const newContent = content.replace(/(\/\/ @version\s+).*/, `$1${version}`);
 
   fs.writeFileSync(filePath, newContent);
