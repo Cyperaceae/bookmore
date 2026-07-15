@@ -18,10 +18,10 @@
 // @icon         https://lh3.googleusercontent.com/Ka5TAf3UA4d-oZrv2ZazRgnTMtpl-aObXXZmp2pL9D8MTYiCUK-IF_8l4Joczf0JP0d_IJAWFK3Qs5DvNDzB5_I3JQ=s120
 // @license      GPL-3.0-only
 // ==/UserScript==
- 
+
 (function () {
   'use strict';
- 
+
   const WORKER_URL = 'https://tiny-leaf-4d57.cccccccccccc.workers.dev/';
   const STORAGE_KEYS = {
     REMOTE_URLS: 'remoteUrls',
@@ -29,14 +29,14 @@
     LAST_SYNC: 'lastSync',
     INSTALLED_VERSION: 'installedVersion',
   };
- 
+
   const CURRENT_VERSION = GM_info?.script?.version || '2.3.0';
   const SYNC_INTERVAL_MS = 3 * 24 * 60 * 60 * 1000; // 3 days
- 
+
   // ---------------------------------------------------------------------------
   // Utilities
   // ---------------------------------------------------------------------------
- 
+
   /** Clean up a book title (remove multiple whitespaces, URL encodings, etc.) */
   function cleanTitle(title) {
     if (!title) return '';
@@ -44,7 +44,7 @@
     if (cleaned.includes('%')) {
       try {
         cleaned = decodeURIComponent(cleaned);
-      } catch (_) {}
+      } catch (_) { }
     }
     return cleaned.replace(/\s+/g, ' ').trim();
   }
@@ -68,7 +68,7 @@
       .replace(/>/g, '>')
       .replace(/"/g, '"');
   }
- 
+
   /** Read and parse the stored remote URL array; returns [] on any failure. */
   function getStoredUrls() {
     try {
@@ -77,11 +77,11 @@
       return [];
     }
   }
- 
+
   // ---------------------------------------------------------------------------
   // Worker sync
   // ---------------------------------------------------------------------------
- 
+
   /**
    * Fetch the latest mirror list from the Cloudflare Worker.
    *
@@ -94,7 +94,7 @@
    */
   async function syncUrlsFromWorker({ diffOnly = false } = {}) {
     console.log('[Book More] Syncing URLs from Worker...');
- 
+
     const response = await new Promise((resolve) => {
       GM_xmlhttpRequest({
         method: 'GET',
@@ -105,12 +105,12 @@
         onerror: () => resolve(null),
       });
     });
- 
+
     if (!response || response.status !== 200) {
       console.warn('[Book More] Sync failed: Worker returned', response?.status ?? 'no response');
       return null;
     }
- 
+
     let remoteUrls;
     try {
       const data = JSON.parse(response.responseText);
@@ -119,15 +119,15 @@
       console.error('[Book More] Sync failed: Invalid JSON from Worker');
       return null;
     }
- 
+
     if (!Array.isArray(remoteUrls) || remoteUrls.length === 0) {
       console.warn('[Book More] Sync failed: No URLs in Worker response');
       return null;
     }
- 
+
     // Always update the timestamp so the interval resets on a successful fetch.
     GM_setValue(STORAGE_KEYS.LAST_SYNC, new Date().toISOString());
- 
+
     if (diffOnly) {
       const localJson = JSON.stringify([...getStoredUrls()].sort());
       const remoteJson = JSON.stringify([...remoteUrls].sort());
@@ -137,12 +137,12 @@
       }
       console.log('[Book More] Smart sync: mirrors updated');
     }
- 
+
     GM_setValue(STORAGE_KEYS.REMOTE_URLS, JSON.stringify(remoteUrls));
     console.log('[Book More] URLs stored:', remoteUrls);
     return remoteUrls;
   }
- 
+
   /**
    * Return the URL to use for Anna's Archive searches.
    * Priority: custom URL → first cached remote URL → fresh sync.
@@ -150,23 +150,23 @@
   async function getEffectiveUrl() {
     const customUrl = GM_getValue(STORAGE_KEYS.CUSTOM_URL);
     if (customUrl) return customUrl;
- 
+
     const cached = getStoredUrls();
     if (cached.length > 0) return cached[0];
- 
+
     console.log('[Book More] No cached URLs, attempting immediate sync...');
     const fresh = await syncUrlsFromWorker();
     return fresh?.[0] ?? null;
   }
- 
+
   // ---------------------------------------------------------------------------
   // Auto-sync on page load
   // ---------------------------------------------------------------------------
- 
+
   (async () => {
     const lastSync = GM_getValue(STORAGE_KEYS.LAST_SYNC);
     const lastSyncTime = lastSync ? new Date(lastSync).getTime() : 0;
- 
+
     if (!lastSync) {
       console.log('[Book More] First run – syncing immediately');
       await syncUrlsFromWorker();
@@ -178,49 +178,53 @@
       console.log(`[Book More] Next auto-sync in ~${hoursLeft} h`);
     }
   })();
- 
+
   // ---------------------------------------------------------------------------
   // Book data extraction
   // ---------------------------------------------------------------------------
- 
+
   function extractBookData() {
     const script = document.querySelector('script[type="application/ld+json"]');
     if (!script) return { title: '', isbn: '' };
- 
+
     let data;
     try {
       data = JSON.parse(script.textContent.trim());
     } catch (_) {
       return { title: '', isbn: '' };
     }
- 
+
     if (Array.isArray(data)) {
       data = data.find((x) => x['@type'] === 'Book') ?? data[0] ?? {};
     }
- 
+
     // Decode HTML entities that may appear in JSON-LD title strings.
     const title = cleanTitle(decodeHtml(data.name ?? data.title ?? ''));
- 
+
     const isbn = (data.isbn ?? '').replace(/-/g, '');
     return { title, isbn };
   }
- 
+
   // ---------------------------------------------------------------------------
   // URL construction
   // ---------------------------------------------------------------------------
- 
+
   function buildSearchUrls(baseUrl, title, isbn) {
+    if (!baseUrl) {
+      return null;
+    }
+
     const base = baseUrl.replace(/\/$/, '');
     return {
       annaIsbn: isbn ? `${base}/search?q=${encodeURIComponent(isbn)}` : null,
       annaTitle: title ? `${base}/search?q=${encodeURIComponent(title)}` : null,
     };
   }
- 
+
   // ---------------------------------------------------------------------------
   // DOM helpers
   // ---------------------------------------------------------------------------
- 
+
   function applyHover(btn, bg, hoverBg, color, hoverColor) {
     btn.addEventListener('mouseenter', () => {
       btn.style.backgroundColor = hoverBg;
@@ -231,7 +235,7 @@
       btn.style.color = color;
     });
   }
- 
+
   function makeButton(label, href, buttonClass, hoverFn) {
     const a = document.createElement('a');
     a.href = href;
@@ -242,14 +246,14 @@
     hoverFn?.(a);
     return a;
   }
- 
+
   function makeLibbyButton(title, buttonClass, hoverFn) {
     const btn = document.createElement('a');
     btn.href = '#';
     btn.textContent = 'Libby';
     btn.className = buttonClass;
     hoverFn?.(btn);
- 
+
     btn.addEventListener('click', async (e) => {
       e.preventDefault();
       try {
@@ -260,17 +264,17 @@
       }
       window.open('https://libbyapp.com/search', '_blank', 'noopener');
     });
- 
+
     return btn;
   }
- 
+
   // ---------------------------------------------------------------------------
   // CSS injection (idempotent)
   // ---------------------------------------------------------------------------
- 
+
   function injectCSS() {
     if (document.getElementById('book-more-styles')) return;
- 
+
     const style = document.createElement('style');
     style.id = 'book-more-styles';
     style.textContent = `
@@ -453,11 +457,11 @@
     `;
     document.head.appendChild(style);
   }
- 
+
   // ---------------------------------------------------------------------------
   // Site configuration
   // ---------------------------------------------------------------------------
- 
+
   const siteConfig = {
     neodb: {
       match: /^https:\/\/neodb\.social\/book\//,
@@ -480,7 +484,7 @@
           'var(--pico-primary)', 'var(--pico-primary-inverse)'
         ),
     },
- 
+
     douban: {
       match: /^https:\/\/book\.douban\.com\/subject\//,
       insertTarget() {
@@ -504,7 +508,7 @@
       },
       buttonClass: 'bm-btn-douban',
     },
- 
+
     goodreads: {
       match: /^https:\/\/www\.goodreads\.com\/(?:[^/]+\/)?book\//,
       insertTarget() {
@@ -522,7 +526,7 @@
       buttonClass: 'bm-btn-goodreads',
       hover: (btn) => applyHover(btn, '#f5f5f1', '#ddd', '#333', '#333'),
     },
- 
+
     storygraph: {
       match: /^https:\/\/app\.thestorygraph\.com\/books\//,
       responsive: true,
@@ -531,7 +535,7 @@
         const titleEl = document.querySelector('.book-title-author-and-series h3') ||
           document.querySelector('h3.font-semibold');
         const title = titleEl ? cleanTitle(titleEl.textContent) : '';
- 
+
         let isbn = '';
         const editionInfo = document.querySelector('.edition-info');
         if (editionInfo) {
@@ -566,11 +570,11 @@
       hover: (btn) => applyHover(btn, 'transparent', '#e5e7eb', '#374151', '#374151'),
     },
   };
- 
+
   // ---------------------------------------------------------------------------
   // Responsive migration helper for SPA navigation
   // ---------------------------------------------------------------------------
- 
+
   /**
    * Handle responsive migration of the button container on window resize.
    * Essential for StoryGraph's responsive layout changes.
@@ -591,11 +595,11 @@
       timer = setTimeout(migrate, 150);
     });
   }
- 
+
   // ---------------------------------------------------------------------------
   // Settings modal
   // ---------------------------------------------------------------------------
- 
+
   /** Render the remote-URL list into the given container element. */
   function renderUrlList(listEl, urls) {
     listEl.replaceChildren(); // clear
@@ -614,23 +618,23 @@
       });
     }
   }
- 
+
   function showSettingsModal() {
     // Prevent duplicate modals
     if (document.getElementById('bm-settings-modal')) return;
- 
+
     const customUrl = GM_getValue(STORAGE_KEYS.CUSTOM_URL) || '';
     const remoteUrls = getStoredUrls();
     const lastSync = GM_getValue(STORAGE_KEYS.LAST_SYNC);
     const syncTime = lastSync ? new Date(lastSync).toLocaleString() : 'Never';
- 
+
     const overlay = document.createElement('div');
     overlay.className = 'bm-settings-overlay';
- 
+
     const modal = document.createElement('div');
     modal.id = 'bm-settings-modal';
     modal.className = 'bm-settings-modal';
- 
+
     // Build modal structure with DOM API to avoid any injection risk
     modal.innerHTML = `
       <h2>⚙️ Book More Settings</h2>
@@ -660,15 +664,15 @@
         <button id="bm-close-btn" class="bm-btn bm-btn-secondary">Close</button>
       </div>
     `;
- 
+
     document.body.appendChild(overlay);
     document.body.appendChild(modal);
- 
+
     // Populate fields that contain user/remote data safely
     modal.querySelector('#bm-custom-url').value = customUrl;
     modal.querySelector('#bm-sync-time').textContent = syncTime;
     renderUrlList(modal.querySelector('#bm-remote-list'), remoteUrls);
- 
+
     // ---- helpers ----
     const statusEl = modal.querySelector('#bm-status-message');
     let statusTimer;
@@ -678,9 +682,9 @@
       statusEl.className = `bm-status-message ${isError ? 'error' : 'success'}`;
       statusTimer = setTimeout(() => { statusEl.className = 'bm-status-message'; }, 3000);
     };
- 
+
     const closeModal = () => { overlay.remove(); modal.remove(); };
- 
+
     // ---- Sync Now ----
     modal.querySelector('#bm-sync-btn').addEventListener('click', async () => {
       const btn = modal.querySelector('#bm-sync-btn');
@@ -692,14 +696,14 @@
           showStatus('Sync failed: Worker unavailable', true);
           return;
         }
- 
+
         const localUrls = getStoredUrls(); // already updated by syncUrlsFromWorker
         const changed = JSON.stringify([...localUrls].sort()) !== JSON.stringify([...freshUrls].sort());
- 
+
         renderUrlList(modal.querySelector('#bm-remote-list'), freshUrls);
         modal.querySelector('#bm-mirror-count').textContent = freshUrls.length;
         modal.querySelector('#bm-sync-time').textContent = new Date().toLocaleString();
- 
+
         showStatus(
           changed
             ? `✓ Updated: ${freshUrls.length} mirror(s) synced!`
@@ -712,7 +716,7 @@
         btn.textContent = 'Sync Now';
       }
     });
- 
+
     // ---- Save ----
     modal.querySelector('#bm-save-btn').addEventListener('click', () => {
       const url = modal.querySelector('#bm-custom-url').value.trim();
@@ -733,7 +737,7 @@
         showStatus('Custom URL cleared');
       }
     });
- 
+
     // ---- Reset ----
     modal.querySelector('#bm-reset-btn').addEventListener('click', () => {
       if (confirm('Reset all settings to default?')) {
@@ -742,18 +746,18 @@
         showStatus('Settings reset');
       }
     });
- 
+
     modal.querySelector('#bm-close-btn').addEventListener('click', closeModal);
     overlay.addEventListener('click', closeModal);
   }
- 
+
   // ---------------------------------------------------------------------------
   // First-run / upgrade banner
   // ---------------------------------------------------------------------------
- 
+
   function showSettingsAwarenessBanner() {
     if (GM_getValue(STORAGE_KEYS.INSTALLED_VERSION) === CURRENT_VERSION) return;
- 
+
     const banner = document.createElement('div');
     banner.id = 'book-more-awareness-banner';
     banner.textContent = 'Book More settings: Tampermonkey menu → ⚙️ Book More Settings';
@@ -767,16 +771,16 @@
     `;
     document.body.appendChild(banner);
     setTimeout(() => banner.isConnected && banner.remove(), 5000);
- 
+
     const prev = GM_getValue(STORAGE_KEYS.INSTALLED_VERSION);
     GM_setValue(STORAGE_KEYS.INSTALLED_VERSION, CURRENT_VERSION);
     console.log(`[Book More] Updated from ${prev ?? 'none'} to ${CURRENT_VERSION}`);
   }
- 
+
   // ---------------------------------------------------------------------------
   // SPA navigation handler
   // ---------------------------------------------------------------------------
- 
+
   /**
    * Handle SPA navigation by observing URL changes.
    * Essential for StoryGraph's client-side routing.
@@ -792,72 +796,69 @@
     });
     observer.observe(document.body, { childList: true, subtree: true });
   }
- 
+
   // ---------------------------------------------------------------------------
   // Main init
   // ---------------------------------------------------------------------------
- 
+
   async function init() {
     const active = Object.values(siteConfig).find((cfg) => cfg.match.test(location.href));
     if (!active) return;
- 
+
     // Check if buttons already exist to prevent duplicates on navigation
     if (document.getElementById('book-more-links')) return;
- 
+
     injectCSS();
- 
+
     const { title, isbn } = active.extractData ? active.extractData() : extractBookData();
     if (!title) return;
- 
+
     const effectiveUrl = await getEffectiveUrl();
-    if (!effectiveUrl) {
-      console.error('[Book More] No Anna\'s Archive URL available');
-      return;
-    }
- 
-    const links = buildSearchUrls(effectiveUrl, title, isbn);
- 
+
+    const links = effectiveUrl ? buildSearchUrls(effectiveUrl, title, isbn) : null;
+
     const container = document.createElement('div');
     active.container(container);
- 
+
     const wrapper = active.wrapper ? active.wrapper() : container;
- 
+
     const addBtn = (el) => {
       const node = active.buttonWrapper ? active.buttonWrapper(el) : el;
       wrapper.appendChild(node);
     };
- 
-    if (links.annaIsbn)
+
+    if (links?.annaIsbn)
       addBtn(makeButton('Anna (ISBN)', links.annaIsbn, active.buttonClass, active.hover));
-    if (links.annaTitle)
+    if (links?.annaTitle)
       addBtn(makeButton('Anna (Title)', links.annaTitle, active.buttonClass, active.hover));
+
     addBtn(makeLibbyButton(title, active.buttonClass, active.hover));
- 
+
     if (wrapper !== container) container.appendChild(wrapper);
- 
+
     const { parent, before } = active.insertTarget();
     parent?.insertBefore(container, before);
- 
+
     // Enable responsive migration for sites that need it (StoryGraph)
     if (active.responsive && active.selectors) {
       handleResponsiveMigration(container, active.selectors);
     }
   }
- 
+
   // ---------------------------------------------------------------------------
   // Menu commands
   // ---------------------------------------------------------------------------
- 
+
   GM_registerMenuCommand('⚙️ Book More Settings', showSettingsModal);
   GM_registerMenuCommand('🔄 Sync URLs Now', async () => {
     const urls = await syncUrlsFromWorker();
     console.log(`[Book More] Manual sync: ${urls ? urls.length + ' mirror(s)' : 'failed'}`);
   });
- 
+
   // ---------------------------------------------------------------------------
   // Bootstrap
   // ---------------------------------------------------------------------------
- 
+
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
       showSettingsAwarenessBanner();
@@ -867,7 +868,7 @@
     showSettingsAwarenessBanner();
     init();
   }
- 
+
   // Listen for SPA route changes
   handleRouting();
 })();

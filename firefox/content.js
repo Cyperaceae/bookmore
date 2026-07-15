@@ -7,7 +7,7 @@
     if (cleaned.includes('%')) {
       try {
         cleaned = decodeURIComponent(cleaned);
-      } catch (_) {}
+      } catch (_) { }
     }
     return cleaned.replace(/\s+/g, ' ').trim();
   }
@@ -54,7 +54,10 @@
    * @returns {Object} - Object containing search URLs
    */
   function buildSearchUrls(baseUrl, title, isbn) {
-    // Ensure baseUrl doesn't have trailing slash
+    if (!baseUrl) {
+      return null;
+    }
+
     const cleanBaseUrl = baseUrl.replace(/\/$/, '');
 
     return {
@@ -312,7 +315,7 @@
   }
 
   // --------- Main initialization ----------
-function handleResponsiveMigration(container, selectors) {
+  function handleResponsiveMigration(container, selectors) {
     const migrate = () => {
       const targets = document.querySelectorAll(selectors);
       const visibleTarget = Array.from(targets).find(el => el.offsetParent !== null);
@@ -327,9 +330,9 @@ function handleResponsiveMigration(container, selectors) {
     });
   }
 
-async function init() {
+  async function init() {
     if (!detectSite()) return;
-    
+
     // Check if buttons already exist to prevent duplicates on navigation
     if (document.getElementById('book-more-links')) return;
 
@@ -338,6 +341,13 @@ async function init() {
 
     const effectiveUrl = await getEffectiveUrl();
     const links = buildSearchUrls(effectiveUrl, title, isbn);
+
+    if (!links) {
+      console.warn(
+        '[Book More] No mirror available. Worker may be unavailable or configuration has not been synced yet.'
+      );
+      return;
+    }
 
     const container = document.createElement('div');
     active.container(container);
@@ -361,10 +371,10 @@ async function init() {
       handleResponsiveMigration(container, active.selectors);
     }
   }
-  
-/**
-   * Handle SPA navigation (essential for StoryGraph)
-   */
+
+  /**
+     * Handle SPA navigation (essential for StoryGraph)
+     */
   function handleRouting() {
     let lastUrl = location.href;
     const observer = new MutationObserver(() => {
@@ -377,7 +387,7 @@ async function init() {
     observer.observe(document.body, { childList: true, subtree: true });
   }
 
-// Initial load
+  // Initial load
   init().catch(console.error);
   // Listen for SPA route changes
   handleRouting();

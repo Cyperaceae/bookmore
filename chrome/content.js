@@ -7,7 +7,7 @@
     if (cleaned.includes('%')) {
       try {
         cleaned = decodeURIComponent(cleaned);
-      } catch (_) {}
+      } catch (_) { }
     }
     return cleaned.replace(/\s+/g, ' ').trim();
   }
@@ -36,7 +36,12 @@
   }
 
   function buildSearchUrls(baseUrl, title, isbn) {
+    if (!baseUrl) {
+      return null;
+    }
+
     const cleanBaseUrl = baseUrl.replace(/\/$/, '');
+
     return {
       annaIsbn: isbn ? `${cleanBaseUrl}/search?q=${isbn}` : null,
       annaTitle: `${cleanBaseUrl}/search?q=${encodeURIComponent(title)}`,
@@ -107,7 +112,7 @@
       match: /^https:\/\/book\.douban\.com\/subject\//,
       insertTarget() {
         const aside = document.querySelector('.subjectwrap .aside') ||
-                      document.querySelector('.aside');
+          document.querySelector('.aside');
         return { parent: aside, before: aside?.firstChild };
       },
       container(el) {
@@ -131,7 +136,7 @@
       match: /^https:\/\/www\.goodreads\.com\/(?:[^/]+\/)?book\//,
       insertTarget() {
         const h = document.querySelector('#bookTitle') ||
-                  document.querySelector('h1');
+          document.querySelector('h1');
         return { parent: h?.parentNode, before: h };
       },
       container(el) {
@@ -154,8 +159,8 @@
       responsive: true,
       selectors: '.book-title-author-and-series',
       extractData() {
-        const titleEl = document.querySelector('.book-title-author-and-series h3') || 
-                        document.querySelector('h3.font-semibold');
+        const titleEl = document.querySelector('.book-title-author-and-series h3') ||
+          document.querySelector('h3.font-semibold');
         const title = titleEl ? cleanTitle(titleEl.textContent) : '';
 
         let isbn = '';
@@ -287,7 +292,7 @@
 
   async function init() {
     if (!detectSite()) return;
-    
+
     // Check if buttons already exist to prevent duplicates on navigation
     if (document.getElementById('book-more-links')) return;
 
@@ -296,6 +301,13 @@
 
     const effectiveUrl = await getEffectiveUrl();
     const links = buildSearchUrls(effectiveUrl, title, isbn);
+
+    if (!links) {
+      console.warn(
+        '[Book More] No mirror available. Worker may be unavailable or configuration has not been synced yet.'
+      );
+      return;
+    }
 
     const container = document.createElement('div');
     active.container(container);

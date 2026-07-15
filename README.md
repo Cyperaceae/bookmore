@@ -4,9 +4,15 @@
 
 Quick-access buttons for Anna's Archive (ISBN/title search) and Libby (copies title) on Goodreads, StoryGraph, Douban and NeoDB.
 
+🔗 [Landing page](https://bookmore.pages.dev/)
+
 ## Installation
 
 ### Chrome / Edge
+
+Install directly from the [Chrome Web Store](https://chromewebstore.google.com/detail/book-more/hhadbkbnkemceekomjledaafjcedpjkg).
+
+Alternatively, for manual installation:
 
 1. Download the latest `bookmore-chrome-*.zip` from the [Releases](https://github.com/Cyperaceae/bookmore/releases) page.
 2. Unzip the downloaded file.
@@ -14,13 +20,17 @@ Quick-access buttons for Anna's Archive (ISBN/title search) and Libby (copies ti
 
 ### Firefox
 
+Install directly from [Firefox Add-ons](https://addons.mozilla.org/en-US/firefox/addon/book-more/).
+
+Alternatively, for manual installation:
+
 1. Download the latest `bookmore-firefox-*.zip` from the [Releases](https://github.com/Cyperaceae/bookmore/releases) page.
 2. Go to `about:debugging#/runtime/this-firefox`, click **Load Temporary Add-on...**, and select the downloaded ZIP file.
 3. Alternatively, package or install it permanently via `about:addons`.
 
 ### Tampermonkey
 
-Install the latest `bookmore.user.js` from the [Releases](https://github.com/Cyperaceae/bookmore/releases) page or drag it into your browser with Tampermonkey installed.
+Install directly from [Greasy Fork](https://greasyfork.org/en/scripts/558501-book-more), or grab the latest `bookmore.user.js` from the [Releases](https://github.com/Cyperaceae/bookmore/releases) page and drag it into your browser with Tampermonkey installed.
 
 ## Features
 
